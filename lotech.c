@@ -286,7 +286,7 @@ static bool shutdown_qemm(struct config __far *cfg) {
 }
 
 
-static void check_jemm(char bios_id) {
+static void check_jemm() {
   unsigned char buf[6] = { 0 };
   int handle, err;
 
@@ -303,10 +303,9 @@ static void check_jemm(char bios_id) {
     return;
   }
 
-  cputs("Detected JEMM memory manager. Use this command instead:\r\n"
-        "    JLOAD JTNDLPT.DLL LPT");
-  putch('1' + bios_id);
-  cputs("\r\n");
+  cputs("Detected JEMM memory manager. Sorry, no JEMM version yet.\r\n");
+  /* cputs("Detected JEMM memory manager. Use this command instead:\r\n" */
+  /*       "    JLOAD JLOTECH.DLL\r\n"); */
   exit(1);
 }
 
@@ -346,77 +345,15 @@ static bool uninstall(struct config __far *cfg) {
 }
 
 
-static short get_lpt_port(int i) {
-  return *(short __far *)MK_FP(0x40, 6 + 2*i);
-}
-
-
 static void usage(void) {
-  cputs("Usage: TNDLPT LPT1|LPT2|LPT3\r\n"
-        "       TNDLPT UNLOAD\r\n");
+  cputs("Usage: LOTECH\r\n"
+        "       LOTECH UNLOAD\r\n");
   exit(1);
 }
 
 
 static void status(struct config __far *cfg) {
   cputs("  Status: loaded\r\n");
-  cputs("  Port: LPT");
-  putch('1' + cfg->bios_id);
-  cputs("\r\n");
-}
-
-
-static const char pp_mode[8][5] = {
-  "SPP", "PS/2", "FIFO", "ECP", "EPP", "???", "Test", "Cfg"
-};
-
-static void ecp(struct config __far *cfg) {
-  int dcr = cfg->lpt_port + 2;
-  int ecr = cfg->lpt_port + 0x402;
-  int orig_mode = (inp(ecr) >> 5) & 7;
-
-  outp(dcr, 0x00);
-  if (! ((inp(ecr) & 3) == 1 && (inp(dcr) & 3) != 1)) {
-    cputs("\r\nECP not found (first test failed)\r\n");
-    return;
-  }
-
-  outp(ecr, 0x34);
-  if (inp(ecr) != 0x35) {
-    cputs("\r\nECP not found (second test failed)\r\n");
-    return;
-  }
-
-  cputs("\r\nECP found, forcing SPP mode\r\n");
-  outp(ecr, 0x00);
-
-  cputs("  (previous mode was: ");
-  cputs(pp_mode[orig_mode]);
-  cputs(")\r\n");
-}
-
-
-static void ready_test(struct config __far *cfg) {
-  int data_port = cfg->lpt_port;
-  int status_port = cfg->lpt_port + 1;
-  int ctrl_port = cfg->lpt_port + 2;
-  char stat[24];
-  int i, h;
-
-  outp(data_port, 0x9F);
-  outp(ctrl_port, 12);
-  for (i = 0; i < sizeof(stat); i++) {
-    stat[i] = inp(status_port);
-  }
-  outp(ctrl_port, 9);
-
-  h = sizeof(stat) / 2;
-  cputs("\r\nReady test\r\n");
-  for (i = 0; i < h; i++) {
-    cprintf("  Status #%-2d = 0x%02x %s    Status #%-2d = 0x%02x %s\r\n",
-            i, stat[i], (stat[i] & 0x40) ? "(READY)  " : "(NOT RDY)",
-            i+h, stat[i+h], (stat[i+h] & 0x40) ? "(READY)  " : "(NOT RDY)");
-  }
 }
 
 
@@ -427,8 +364,8 @@ int main(void) {
   struct config __far *cfg = &config;
   int i;
 
-  cputs("TNDLPT " XSTR(VERSION_MAJOR) "." XSTR(VERSION_MINOR)
-        "  github.com/pdewacht/adlipt\r\n\r\n");
+  cputs("LOTECH " XSTR(VERSION_MAJOR) "." XSTR(VERSION_MINOR)
+        "  github.com/pdewacht/lotech\r\n\r\n");
 
   if (cpu_type() < 3) {
     cputs("This TSR requires a 386 or later CPU.\r\n");
@@ -446,7 +383,7 @@ int main(void) {
     }
     else if (result == -1 && _fmemcmp(info.signature, amis_header, 16) == 0) {
       if (info.version.word != (VERSION_MAJOR * 256 + VERSION_MINOR)) {
-        cputs("Error: A different version of TNDLPT is already loaded.\r\n");
+        cputs("Error: A different version of LOTECH is already loaded.\r\n");
         exit(1);
       }
       installed = true;
@@ -466,26 +403,15 @@ int main(void) {
     cmdline[cmdlen] = 0;
 
     for (arg = strtok(cmdline, " "); arg; arg = strtok(NULL, " ")) {
-      if (strnicmp(arg, "lpt", 3) == 0 && (i = arg[3] - '0') >= 1 && i <= 3) {
-        int port = get_lpt_port(i);
-        if (!port) {
-          cputs("Error: LPT");
-          putch('0' + i);
-          cputs(" is not present.\r\n");
-          exit(1);
-        }
-        cfg->lpt_port = port;
-        cfg->bios_id = i - 1;
-      }
-      else if (stricmp(arg, "unload") == 0) {
+      if (stricmp(arg, "unload") == 0) {
         if (!installed) {
-          cputs("TNDLPT is not loaded.\r\n");
+          cputs("LOTECH is not loaded.\r\n");
           exit(1);
         } else if (uninstall(cfg)) {
-          cputs("TNDLPT is now unloaded from memory.\r\n");
+          cputs("LOTECH is now unloaded from memory.\r\n");
           exit(0);
         } else {
-          cputs("Could not unload TNDLPT.\r\n");
+          cputs("Could not unload LOTECH.\r\n");
           exit(1);
         }
       } else {
@@ -495,10 +421,6 @@ int main(void) {
   }
 
   if (!installed) {
-    if (!cfg->lpt_port) {
-      usage();
-      return 1;
-    }
     cfg->psp = _psp;
 
     if (!found_unused_amis_id) {
@@ -506,7 +428,7 @@ int main(void) {
       return 1;
     }
 
-    check_jemm(cfg->bios_id);
+    check_jemm();
     if (!setup_qemm() && !setup_emm386()) {
       cputs("Error: no supported memory manager found\r\n"
             "Requires EMM386 4.46+, QEMM 7.03+ or JEMM\r\n");
@@ -524,39 +446,11 @@ int main(void) {
 
   status(cfg);
 
-  ecp(cfg);
-  delay(100);
-
-  /* reset the sound chip */
-  outp(cfg->lpt_port + 2, 1);
-  delay(100);
-  outp(cfg->lpt_port + 2, 9);
-  delay(100);
-
-  /* ready test */
-  ready_test(cfg);
-  delay(100);
-
-  /* reset the sound chip */
-  outp(cfg->lpt_port + 2, 1);
-  delay(100);
-  outp(cfg->lpt_port + 2, 9);
-  delay(100);
-
-  {
-    /* silence */
-    char buf[5];
-    cputs("\r\nSilencing\r\n");
-    outp(0x205, 0x9F);
-    cputs("  A="); cputs(itoa(inp(0x3FF), buf, 10));
-    outp(0x205, 0xBF);
-    cputs("  B="); cputs(itoa(inp(0x3FF), buf, 10));
-    outp(0x205, 0xDF);
-    cputs("  C="); cputs(itoa(inp(0x3FF), buf, 10));
-    outp(0x205, 0xFF);
-    cputs("  D="); cputs(itoa(inp(0x3FF), buf, 10));
-    cputs("\r\n");
-  }
+  /* Silence */
+  outp(0x205, 0x9F);
+  outp(0x205, 0xBF);
+  outp(0x205, 0xDF);
+  outp(0x205, 0xFF);
 
   if (!installed) {
     /* free environment block */

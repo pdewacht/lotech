@@ -1,6 +1,6 @@
-name tndlpt
+name lotech
 
-file tndlpt
+file lotech
 file resident
 file res_end
 

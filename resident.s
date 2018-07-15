@@ -143,8 +143,8 @@ emm386_virt_io_handle   dw ?
 CONFIG                  ENDS
 
 
-_amis_header:           db 'SERDACO '           ;8 bytes: manufacturer
-                        db 'TNDLPT  '           ;8 bytes: product
+_amis_header:           db 'LOTECH  '           ;8 bytes: manufacturer
+                        db 'LOTECH  '           ;8 bytes: product
                         db 0                    ;no description
 
 ;;; Configuration immediately follows AMIS header
@@ -154,75 +154,12 @@ _config                 CONFIG <>
 tnd_output:
         test cl, 4
         je tnd_ignore
-        push ax
-        push cx
+
         push dx
-
-        ;; reverse bits in al:
-        ;; shl al, 1
-	;; rcr ah, 1
-	;; shl al, 1
-	;; rcr ah, 1
-	;; shl al, 1
-	;; rcr ah, 1
-	;; shl al, 1
-	;; rcr ah, 1
-	;; shl al, 1
-	;; rcr ah, 1
-	;; shl al, 1
-	;; rcr ah, 1
-	;; shl al, 1
-	;; rcr ah, 1
-	;; shl al, 1
-	;; rcr ah, 1
-	;; mov al, ah
-
-        mov dx, cs:[_config.lpt_port]
+        mov dx, 0x2C0
         out dx, al
-        inc dx
-        inc dx
-        mov al, 12
-        out dx, al
-
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-        ;; in al, dx
-
-        dec dx
-
-        ;; wait for NOT READY
-        mov cx, 0x18
-@@W1:   in al, dx
-        test al, 0x40
-        loopnz @@W1
-        ;; wait for READY
-        inc cx
-@@W2:   in al, dx
-        test al, 0x40
-        loopz @@W2
-
-        inc dx
-        mov al, 9
-        out dx, al
-
-        mov dx, 0x3FF
-        mov al, cl
-        out dx, al
-
         pop dx
-        pop cx
-        pop ax
+
 tnd_ignore:
         clc
         retf
