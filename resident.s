@@ -112,8 +112,6 @@ _qemm_handler:
         je tnd_ignore
         cmp dx, 0x205
         je tnd_output
-        cmp dx, 0x2C0
-        je tnd_output
         jmp dword ptr cs:qemm_next_handler
 
 
@@ -127,7 +125,6 @@ _emm386_table:
         dw 0x1E1, tnd_ignore
         dw 0x201, tnd_ignore
         dw 0x205, tnd_output
-        dw 0x2C0, tnd_output
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -185,7 +185,7 @@ static bool setup_emm386() {
     return false;
   }
 
-  err = emm386_virtualize_io(0x1E0, 0x2C0, 5, &emm386_table, (int)&resident_end, &v);
+  err = emm386_virtualize_io(0x1E0, 0x205, 4, &emm386_table, (int)&resident_end, &v);
   if (err) {
     cputs("EMM386 I/O virtualization failed\r\n");
     exit(1);
@@ -223,7 +223,7 @@ static void __far *get_qpi_entry_point() {
 }
 
 
-static const int qemm_ports[] = { 0x0C0, 0x0C1, 0x1E0, 0x1E1, 0x201, 0x205, 0x2C0, 0 };
+static const int qemm_ports[] = { 0x0C0, 0x0C1, 0x1E0, 0x1E1, 0x201, 0x205, 0 };
 
 static bool setup_qemm() {
   void __far *qpi;
