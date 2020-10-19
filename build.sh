@@ -1,17 +1,16 @@
 #!/bin/sh
 set -e
 
-VERSION_MAJOR=0
-VERSION_MINOR=1
+(cd tndlpt && ./build.sh)
+(cd tndvgm && ./build.sh)
 
-CC='wcc -bt=dos -zq -oxhs'
-CC32='wcc386 -mf -zl -zls -zq -oxhs'
-AS='wasm -zq'
-DEFS="-dVERSION_MAJOR=$VERSION_MAJOR -dVERSION_MINOR=$VERSION_MINOR"
-#DEFS="$DEFS -dDEBUG"
+DIR=$(mktemp -d)
+cp tndlpt/lotech.com "$DIR/"
+cp tndlpt/loreset.exe "$DIR/"
+cp tndvgm/lotest.exe "$DIR/"
+cp tndvgm/lotest.vgz "$DIR/"
 
-set -x
-$CC $DEFS lotech.c
-$AS $DEFS resident.s
-$AS $DEFS res_end.s
-wlink @lotech.wl
+rm -f lotech.zip
+zip -9j lotech.zip "$DIR"/*
+
+rm -rf "$DIR"

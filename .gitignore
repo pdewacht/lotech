@@ -1,3 +1,7 @@
 *.o
 *.map
+*.exe
+*.com
 
+/tndlpt/cmdline.c
+/tndvgm/vgm.c
